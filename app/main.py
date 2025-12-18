@@ -2,6 +2,8 @@ import argparse
 import socket  # noqa: F401
 import asyncio
 
+in_memory_db = {}
+
 def parse_rep(message):
     parts = message.split("\r\n")
     if not parts[0].startswith("*"):
@@ -16,6 +18,12 @@ def parse_rep(message):
             index += 1
     return result
 
+def bulk_string(arg):
+    return f"${len(arg)}\r\n{arg}\r\n".encode()
+
+def simple_string(message):
+    return f"+{message}\r\n".encode()
+
 async def handle_connection(reader, writer):
     """
     This function is called for each new client connection.
@@ -23,7 +31,6 @@ async def handle_connection(reader, writer):
     # Gte the client's address for logging
     client_addr = writer.get_extra_info("peername")
     print(f"✅ New connection from {client_addr}")
-
     try:
         while True:
             data = await asyncio.wait_for(reader.read(1024), timeout=60.0)
@@ -32,17 +39,23 @@ async def handle_connection(reader, writer):
                 break
             message = data.decode()
             parsed = parse_rep(message)
-            print(f"➡️ Received '{parsed}' from {client_addr}")
+            print(f"➡️ Received '{parsed}' from {client_addr}, {in_memory_db}")
             if not parsed:
                 continue
             command = parsed[0].upper()
             if command == "PING":
                 writer.write(b"+PONG\r\n")
-            if command == "ECHO":
+            elif command == "ECHO":
                 arg = parsed[1]
-                length = len(arg)
-                response = f"${length}\r\n{arg}\r\n".encode()
+                response = bulk_string(arg)
                 writer.write(response)
+            elif command == "SET":
+                in_memory_db[parsed[1]] = parsed[2]
+                writer.write(simple_string("OK"))
+            elif command == "GET":
+                writer.write(bulk_string(in_memory_db.get(parsed[1], "")))
+            else:
+                writer.write("$-1\r\n".encode())
             #send the data immediately
             await writer.drain()
     except asyncio.TimeoutError:
