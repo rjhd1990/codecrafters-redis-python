@@ -2,6 +2,20 @@ import argparse
 import socket  # noqa: F401
 import asyncio
 
+def parse_rep(message):
+    parts = message.split("\r\n")
+    if not parts[0].startswith("*"):
+        return []
+    num_elements = int(parts[0][1:])
+    index =1
+    result = []
+    for i in range(num_elements):
+        if index < len(parts) and parts[index].startswith("$"):
+            index += 1
+            result.append(parts[index])
+            index += 1
+    return result
+
 async def handle_connection(reader, writer):
     """
     This function is called for each new client connection.
@@ -16,10 +30,19 @@ async def handle_connection(reader, writer):
             if not data:
                 print(f"⭕️ Client {client_addr} disconnected")
                 break
-            message = data.decode().strip()
-            print(f"➡️ Received '{message}' from {client_addr}")
-
-            writer.write(b"+PONG\r\n")
+            message = data.decode()
+            parsed = parse_rep(message)
+            print(f"➡️ Received '{parsed}' from {client_addr}")
+            if not parsed:
+                continue
+            command = parsed[0].upper()
+            if command == "PING":
+                writer.write(b"+PONG\r\n")
+            if command == "ECHO":
+                arg = parsed[1]
+                length = len(arg)
+                response = f"${length}\r\n{arg}\r\n".encode()
+                writer.write(response)
             #send the data immediately
             await writer.drain()
     except asyncio.TimeoutError:
