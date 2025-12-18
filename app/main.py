@@ -70,6 +70,17 @@ async def handle_connection(reader, writer):
                 in_memory_store.setdefault(key, [])
                 in_memory_store[key].extend(values)
                 writer.write(f":{len(in_memory_store[key])}\r\n".encode())
+            elif command == "LRANGE":
+                key = parsed[1]
+                values = in_memory_store.get(key, [])
+                start = int(parsed[2])
+                stop = min(int(parsed[3]), len(values) - 1)
+                if len(values) == 0 or start > len(values):
+                    writer.write("*0\r\n".encode())
+                else:
+                    r = values[start:stop+1]
+                    response = f"*{len(r)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in values[start:stop+1]])
+                    writer.write(response.encode())                
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
