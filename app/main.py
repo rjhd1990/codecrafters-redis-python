@@ -92,9 +92,17 @@ async def handle_connection(reader, writer):
                     response = f"*{len(r)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in values[start:stop+1]])
                     writer.write(response.encode())
             elif command == "LLEN":
-                key =parsed[1]
+                key = parsed[1]
                 values = in_memory_store.get(key, [])
                 writer.write(f":{len(values)}\r\n".encode())
+            elif command == "LPOP":
+                key = parsed[1]
+                values = in_memory_store.get(key, [])
+                if len(values) < 0:
+                    writer.write("$-1\r\n".encode())
+                else:
+                    old_v = values.pop(0)
+                    writer.write(bulk_string(old_v))    
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
