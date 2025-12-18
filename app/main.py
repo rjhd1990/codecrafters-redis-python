@@ -66,9 +66,9 @@ async def handle_connection(reader, writer):
                     writer.write(bulk_string(value))
             elif command == "RPUSH":
                 key = parsed[1]
-                value = parsed[2]
+                values = parsed[2:]
                 in_memory_store.setdefault(key, [])
-                in_memory_store[key].append(value)
+                in_memory_store[key].extend(values)
                 writer.write(simple_string(str(len(in_memory_store[key]))))
             else:
                 writer.write("$-1\r\n".encode())
