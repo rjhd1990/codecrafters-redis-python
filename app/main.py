@@ -90,7 +90,11 @@ async def handle_connection(reader, writer):
                 else:
                     r = values[start:stop+1]
                     response = f"*{len(r)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in values[start:stop+1]])
-                    writer.write(response.encode())                
+                    writer.write(response.encode())
+            elif command == "LLEN":
+                key =parsed[1]
+                values = in_memory_store.get(key, [])
+                writer.write(f":{len(values)}\r\n".encode())
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
