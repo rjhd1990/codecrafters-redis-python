@@ -74,8 +74,10 @@ async def handle_connection(reader, writer):
                 key = parsed[1]
                 values = in_memory_store.get(key, [])
                 start = int(parsed[2])
+                start = max(len(values)+start, 0) if start < 0 else start
                 stop = min(int(parsed[3]), len(values) - 1)
-                if len(values) == 0 or start > len(values):
+                stop = max(len(values)+stop, 0) if stop <0 else stop
+                if len(values) == 0 or start >= len(values) or start > stop:
                     writer.write("*0\r\n".encode())
                 else:
                     r = values[start:stop+1]
