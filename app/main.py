@@ -25,6 +25,9 @@ def bulk_string(arg):
 def simple_string(message):
     return f"+{message}\r\n".encode()
 
+def array_string(array):
+    return f"*{len(array)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in array])
+
 async def handle_connection(reader, writer):
     """
     This function is called for each new client connection.
@@ -88,8 +91,7 @@ async def handle_connection(reader, writer):
                 if len(values) == 0 or start >= len(values) or start > stop:
                     writer.write("*0\r\n".encode())
                 else:
-                    r = values[start:stop+1]
-                    response = f"*{len(r)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in values[start:stop+1]])
+                    response = array_string(values[start:stop+1])
                     writer.write(response.encode())
             elif command == "LLEN":
                 key = parsed[1]
@@ -97,12 +99,20 @@ async def handle_connection(reader, writer):
                 writer.write(f":{len(values)}\r\n".encode())
             elif command == "LPOP":
                 key = parsed[1]
-                values = in_memory_store.get(key, [])
+                values: list = in_memory_store.get(key, [])
+                n = int(parsed[2]) if len(parsed) > 2 else 1
                 if len(values) < 0:
                     writer.write("$-1\r\n".encode())
                 else:
-                    old_v = values.pop(0)
-                    writer.write(bulk_string(old_v))    
+                    if len(parsed) > 2:
+                        pop_vs = []
+                        for _ in range(n):
+                            pop_vs.append(values.pop(0))
+                        response = array_string(pop_vs)
+                        writer.write(response.encode())    
+                    else:
+                        old_v = values.pop(0)
+                        writer.write(bulk_string(old_v))    
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
