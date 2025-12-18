@@ -3,7 +3,7 @@ import socket  # noqa: F401
 import asyncio
 import threading
 
-in_memory_db = {}
+in_memory_store = {}
 
 def parse_rep(message):
     parts = message.split("\r\n")
@@ -40,7 +40,7 @@ async def handle_connection(reader, writer):
                 break
             message = data.decode()
             parsed = parse_rep(message)
-            print(f"➡️ Received '{parsed}' from {client_addr}, {in_memory_db}")
+            print(f"➡️ Received '{parsed}' from {client_addr}, {in_memory_store}")
             if not parsed:
                 continue
             command = parsed[0].upper()
@@ -51,19 +51,25 @@ async def handle_connection(reader, writer):
                 response = bulk_string(arg)
                 writer.write(response)
             elif command == "SET":
-                in_memory_db[parsed[1]] = parsed[2]
+                in_memory_store[parsed[1]] = parsed[2]
                 if len(parsed) >= 4 and parsed[3].lower() in ["px"]:
                     ttl =int(parsed[4])
                     print("ttl",ttl)
-                    threading.Timer(ttl/1000, in_memory_db.pop, args=[parsed[1]]).start()
+                    threading.Timer(ttl/1000, in_memory_store.pop, args=[parsed[1]]).start()
                 
                 writer.write(simple_string("OK"))
             elif command == "GET":
-                value = in_memory_db.get(parsed[1])
+                value = in_memory_store.get(parsed[1])
                 if value is None:
                     writer.write("$-1\r\n".encode())    
                 else:
                     writer.write(bulk_string(value))
+            elif command == "RPUSH":
+                key = parsed[1]
+                value = parsed[2]
+                in_memory_store.setdefault(key, [])
+                in_memory_store[key].append(value)
+                writer.write(simple_string(str(len(in_memory_store[key]))))
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
