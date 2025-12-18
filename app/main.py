@@ -69,7 +69,7 @@ async def handle_connection(reader, writer):
                 values = parsed[2:]
                 in_memory_store.setdefault(key, [])
                 in_memory_store[key].extend(values)
-                writer.write(simple_string(len(in_memory_store[key])))
+                writer.write(f":{len(values)}\r\n".encode())
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
