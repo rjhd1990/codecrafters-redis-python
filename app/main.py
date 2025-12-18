@@ -70,6 +70,14 @@ async def handle_connection(reader, writer):
                 in_memory_store.setdefault(key, [])
                 in_memory_store[key].extend(values)
                 writer.write(f":{len(in_memory_store[key])}\r\n".encode())
+            elif command == "LPUSH":
+                key = parsed[1]
+                values = parsed[2:] or []
+                in_memory_store.setdefault(key, [])
+                values.reverse()
+                in_memory_store[key][:0] = values
+                writer.write(f":{len(in_memory_store[key])}\r\n".encode())
+
             elif command == "LRANGE":
                 key = parsed[1]
                 values = in_memory_store.get(key, [])
