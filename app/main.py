@@ -1,6 +1,7 @@
 import argparse
 import socket  # noqa: F401
 import asyncio
+import threading
 
 in_memory_db = {}
 
@@ -51,9 +52,18 @@ async def handle_connection(reader, writer):
                 writer.write(response)
             elif command == "SET":
                 in_memory_db[parsed[1]] = parsed[2]
+                if len(parsed) >= 4 and parsed[3].lower() in ["px"]:
+                    ttl =int(parsed[4])
+                    print("ttl",ttl)
+                    threading.Timer(ttl/1000, in_memory_db.pop, args=[parsed[1]]).start()
+                
                 writer.write(simple_string("OK"))
             elif command == "GET":
-                writer.write(bulk_string(in_memory_db.get(parsed[1], "")))
+                value = in_memory_db.get(parsed[1])
+                if value is None:
+                    writer.write("$-1\r\n".encode())    
+                else:
+                    writer.write(bulk_string(value))
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
