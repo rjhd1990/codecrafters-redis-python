@@ -26,7 +26,36 @@ def simple_string(message):
     return f"+{message}\r\n".encode()
 
 def array_string(array):
-    return f"*{len(array)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in array])
+    return f"*{len(array)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in array]).encode()
+
+def lrange_command(parsed):
+    key = parsed[1]
+    values = in_memory_store.get(key, [])
+    start = int(parsed[2])
+    start = max(len(values)+start, 0) if start < 0 else start
+    stop = min(int(parsed[3]), len(values) - 1)
+    stop = max(len(values)+stop, 0) if stop <0 else stop
+    if len(values) == 0 or start >= len(values) or start > stop:
+        return "*0\r\n".encode()
+    else:
+        return array_string(values[start:stop+1])
+
+def lpop_command(parsed):
+    key = parsed[1]
+    values: list = in_memory_store.get(key, [])
+    n = int(parsed[2]) if len(parsed) > 2 else 1
+    if len(values) < 0:
+        return "$-1\r\n".encode()
+    else:
+        if len(parsed) > 2:
+            pop_vs = []
+            for _ in range(n):
+                pop_vs.append(values.pop(0))
+            response = array_string(pop_vs)
+        else:
+            old_v = values.pop(0)
+            response = bulk_string(old_v)
+    return response
 
 async def handle_connection(reader, writer):
     """
@@ -80,39 +109,14 @@ async def handle_connection(reader, writer):
                 values.reverse()
                 in_memory_store[key][:0] = values
                 writer.write(f":{len(in_memory_store[key])}\r\n".encode())
-
             elif command == "LRANGE":
-                key = parsed[1]
-                values = in_memory_store.get(key, [])
-                start = int(parsed[2])
-                start = max(len(values)+start, 0) if start < 0 else start
-                stop = min(int(parsed[3]), len(values) - 1)
-                stop = max(len(values)+stop, 0) if stop <0 else stop
-                if len(values) == 0 or start >= len(values) or start > stop:
-                    writer.write("*0\r\n".encode())
-                else:
-                    response = array_string(values[start:stop+1])
-                    writer.write(response.encode())
+                 writer.write(lrange_command(parsed))
             elif command == "LLEN":
                 key = parsed[1]
                 values = in_memory_store.get(key, [])
                 writer.write(f":{len(values)}\r\n".encode())
             elif command == "LPOP":
-                key = parsed[1]
-                values: list = in_memory_store.get(key, [])
-                n = int(parsed[2]) if len(parsed) > 2 else 1
-                if len(values) < 0:
-                    writer.write("$-1\r\n".encode())
-                else:
-                    if len(parsed) > 2:
-                        pop_vs = []
-                        for _ in range(n):
-                            pop_vs.append(values.pop(0))
-                        response = array_string(pop_vs)
-                        writer.write(response.encode())    
-                    else:
-                        old_v = values.pop(0)
-                        writer.write(bulk_string(old_v))    
+                writer.write(lpop_command(parsed))    
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
