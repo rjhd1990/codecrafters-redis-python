@@ -66,7 +66,7 @@ def lpop_command(values, n=0):
 
 async def blpop_command(parsed):
     size = 0
-    timeout = int(parsed[-1])
+    timeout = float(parsed[-1])
     start_timer = time.time()
     item = None
     key = parsed[1]
@@ -79,6 +79,8 @@ async def blpop_command(parsed):
         if timeout > 0 and (time.time()-start_timer >=timeout):
             break
         await asyncio.sleep(0.1) # smaller delay before retry
+    if item is None:
+        return "*-1\r\n".encode()
     return array_string([key, item])
             
 def push_command(push_type, parsed):
