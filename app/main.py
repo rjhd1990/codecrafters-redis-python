@@ -28,9 +28,13 @@ def simple_string(message):
 def array_string(array):
     return f"*{len(array)}\r\n"+"".join([ f"${len(v)}\r\n{v}\r\n" for v in array]).encode()
 
-def lrange_command(parsed):
+def get_key(parsed):
     key = parsed[1]
     values = in_memory_store.get(key, [])
+    return values
+
+def lrange_command(parsed):
+    values = get_key(parsed)
     start = int(parsed[2])
     start = max(len(values)+start, 0) if start < 0 else start
     stop = min(int(parsed[3]), len(values) - 1)
@@ -41,8 +45,7 @@ def lrange_command(parsed):
         return array_string(values[start:stop+1])
 
 def lpop_command(parsed):
-    key = parsed[1]
-    values: list = in_memory_store.get(key, [])
+    values = get_key(parsed)
     n = int(parsed[2]) if len(parsed) > 2 else 1
     if len(values) < 0:
         return "$-1\r\n".encode()
@@ -56,6 +59,24 @@ def lpop_command(parsed):
             old_v = values.pop(0)
             response = bulk_string(old_v)
     return response
+
+def push_command(push_type, parsed):
+    key = parsed[1]
+    values = parsed[2:] or []
+    in_memory_store.setdefault(key, [])
+    if push_type == "RPUSH":
+        in_memory_store[key].extend(values)
+    elif push_type == "RPUSH":
+        values.reverse()
+        in_memory_store[key][:0] = values
+    return 
+
+def set_command(parsed):
+    in_memory_store[parsed[1]] = parsed[2]
+    if len(parsed) >= 4 and parsed[3].lower() in ["px"]:
+        ttl =int(parsed[4])
+        print("ttl",ttl)
+        threading.Timer(ttl/1000, in_memory_store.pop, args=[parsed[1]]).start()
 
 async def handle_connection(reader, writer):
     """
@@ -75,45 +96,32 @@ async def handle_connection(reader, writer):
             print(f"➡️ Received '{parsed}' from {client_addr}, {in_memory_store}")
             if not parsed:
                 continue
+            key = parsed[1]
             command = parsed[0].upper()
             if command == "PING":
                 writer.write(b"+PONG\r\n")
             elif command == "ECHO":
-                arg = parsed[1]
-                response = bulk_string(arg)
+                response = bulk_string(key)
                 writer.write(response)
             elif command == "SET":
-                in_memory_store[parsed[1]] = parsed[2]
-                if len(parsed) >= 4 and parsed[3].lower() in ["px"]:
-                    ttl =int(parsed[4])
-                    print("ttl",ttl)
-                    threading.Timer(ttl/1000, in_memory_store.pop, args=[parsed[1]]).start()
-                
+                set_command(parsed)
                 writer.write(simple_string("OK"))
             elif command == "GET":
-                value = in_memory_store.get(parsed[1])
+                value = get_key(parsed)
                 if value is None:
                     writer.write("$-1\r\n".encode())    
                 else:
                     writer.write(bulk_string(value))
             elif command == "RPUSH":
-                key = parsed[1]
-                values = parsed[2:]
-                in_memory_store.setdefault(key, [])
-                in_memory_store[key].extend(values)
+                push_command("RPUSH", parsed)
                 writer.write(f":{len(in_memory_store[key])}\r\n".encode())
             elif command == "LPUSH":
-                key = parsed[1]
-                values = parsed[2:] or []
-                in_memory_store.setdefault(key, [])
-                values.reverse()
-                in_memory_store[key][:0] = values
+                push_command("LPUSH", parsed)
                 writer.write(f":{len(in_memory_store[key])}\r\n".encode())
             elif command == "LRANGE":
                  writer.write(lrange_command(parsed))
             elif command == "LLEN":
-                key = parsed[1]
-                values = in_memory_store.get(key, [])
+                values = get_key(parsed)
                 writer.write(f":{len(values)}\r\n".encode())
             elif command == "LPOP":
                 writer.write(lpop_command(parsed))    
