@@ -1,0 +1,27 @@
+def parse_rep(message):
+    parts = message.split("\r\n")
+    if not parts[0].startswith("*"):
+        return []
+    num_elements = int(parts[0][1:])
+    index = 1
+    result = []
+    for i in range(num_elements):
+        if index < len(parts) and parts[index].startswith("$"):
+            index += 1
+            result.append(parts[index])
+            index += 1
+    return result
+
+
+class RESP_Encoder:
+    def bulk_string(arg):
+        return f"${len(arg)}\r\n{arg}\r\n".encode()
+
+    def simple_string(message):
+        return f"+{message}\r\n".encode()
+
+    def array_string(array):
+        ret = f"*{len(array)}\r\n"
+        for item in array:
+            ret += f"${len(item)}\r\n{item}\r\n"
+        return ret.encode()
