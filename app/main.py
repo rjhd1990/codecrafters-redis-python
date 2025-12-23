@@ -101,6 +101,18 @@ def set_command(parsed):
         logging.info("ttl",ttl)
         threading.Timer(ttl/1000, in_memory_store.pop, args=[parsed[1]]).start()
 
+def type_command(key):
+    value = in_memory_store.get(key)
+    if value is None:
+        return simple_string("none")
+    if isinstance(value, str):
+        return simple_string("string")
+    elif isinstance(value, list):
+        return simple_string("list")
+    elif isinstance(value, set):
+        return simple_string("set")
+
+
 async def handle_connection(reader, writer):
     """
     This function is called for each new client connection.
@@ -132,7 +144,6 @@ async def handle_connection(reader, writer):
                 set_command(parsed)
                 writer.write(simple_string("OK"))
             elif command == "GET":
-                key = parsed[1]
                 value = in_memory_store.get(key)
                 if value is None:
                     writer.write("$-1\r\n".encode())    
@@ -155,7 +166,10 @@ async def handle_connection(reader, writer):
                 writer.write(lpop_command(values, n))
             elif command == "BLPOP":
                 response = await blpop_command(parsed)
-                writer.write(response)    
+                writer.write(response)
+            elif command == "TYPE":
+                response = type_command(key)
+                writer.write(response)
             else:
                 writer.write("$-1\r\n".encode())
             #send the data immediately
