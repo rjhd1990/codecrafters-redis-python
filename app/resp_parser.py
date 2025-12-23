@@ -20,6 +20,9 @@ class RESP_Encoder:
     def simple_string(message):
         return f"+{message}\r\n".encode()
 
+    def error_string(message):
+        return f"-{message}\r\n".encode()
+
     def array_string(array):
         ret = f"*{len(array)}\r\n"
         for item in array:
