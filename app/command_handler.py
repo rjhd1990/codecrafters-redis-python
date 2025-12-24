@@ -100,7 +100,6 @@ def stream_xadd_command(key, parsed_arg):
     sitems: StreamItems = in_memory_store.get(key)
     if sitems is None:
         sitems = StreamItems()
-    ms, seq = sid.split("-")
     item = {}
     for a in range(3, len(parsed_arg), 2):
         item[parsed_arg[a]] = parsed_arg[a + 1]
