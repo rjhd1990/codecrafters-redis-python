@@ -3,7 +3,8 @@ import time
 import threading
 from . import logging
 from .resp_parser import RESP_Encoder
-from .stream_items import StreamItems
+from .stream_items import StreamItem, StreamHandler
+from typing import List
 
 in_memory_store = {}
 
@@ -91,31 +92,30 @@ def type_command(key):
         return RESP_Encoder.simple_string("list")
     elif isinstance(value, set):
         return RESP_Encoder.simple_string("set")
-    elif isinstance(value, StreamItems):
+    elif len(value) and isinstance(value[0], StreamItem):
         return RESP_Encoder.simple_string("stream")
-
 
 def stream_xadd_command(key, parsed_arg):
     sid = parsed_arg[2]
-    sitems: StreamItems = in_memory_store.get(key)
-    if sitems is None:
-        sitems = StreamItems()
+    sitems: List[StreamItem] = in_memory_store.get(key) or []
+    sObj = StreamHandler(sitems)
     items = []
     for a in range(3, len(parsed_arg), 2):
         items.append((parsed_arg[a], parsed_arg[a + 1]))
-    success, rsp = sitems.xadd(sid, items)
+    success, rsp = sObj.xadd(sid, items)
     if success:
-        in_memory_store[key] = sitems
+        in_memory_store[key] = sObj.view_item()
         return RESP_Encoder.bulk_string(rsp)
     else:
         return RESP_Encoder.error_string(rsp)
 
 
 def stream_xrange_command(key, parsed_arg):
-    sitems: StreamItems = in_memory_store.get(key)
+    sitems: List[StreamItem] = in_memory_store.get(key)
+    sObj = StreamHandler(sitems)
     start_id = parsed_arg[2]
     end_id = parsed_arg[3]
-    resp = sitems.xrange(start_id=start_id, end_id=end_id)
+    resp = sObj.xrange(start_id=start_id, end_id=end_id)
     return RESP_Encoder.array_string(resp)
 
 

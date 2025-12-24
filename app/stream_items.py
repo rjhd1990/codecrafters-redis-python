@@ -1,10 +1,16 @@
 import time
 import itertools
+from typing import TypedDict, NotRequired, List, Any
 
 
-class StreamItems:
+class StreamItem(TypedDict):
+    id: str
+    items: List
+    
+
+class StreamHandler:
     def __init__(self, value_items: list = []):
-        self.value_items = value_items
+        self.value_items: List[StreamItem] = value_items
         self.last_id: tuple[int, int] = (0, -1)  # [Timestamp, sequence]
 
     def _parse_id(self, sid: str):
@@ -53,10 +59,10 @@ class StreamItems:
         result = []
         start_id = self._seralize_id(start_id)
         end_id = self._seralize_id(end_id)
-        for item in self.value_items:
-            sid = item["id"]
+        for rec in self.value_items:
+            sid = rec["id"]
             if start_id == sid or len(result):
-                flattern_items = list(itertools.chain.from_iterable(item["items"]))
+                flattern_items = list(itertools.chain.from_iterable(rec["items"]))
                 result.append([sid, flattern_items])
             if sid == end_id:
                 break
