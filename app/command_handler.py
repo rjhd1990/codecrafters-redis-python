@@ -7,7 +7,6 @@ from .stream_items import StreamItems
 
 in_memory_store = {}
 
-
 def get_values(parsed_arg):
     key = parsed_arg[1]
     values = in_memory_store.get(key, [])
@@ -100,16 +99,22 @@ def stream_xadd_command(key, parsed_arg):
     sitems: StreamItems = in_memory_store.get(key)
     if sitems is None:
         sitems = StreamItems()
-    item = {}
+    items = []
     for a in range(3, len(parsed_arg), 2):
-        item[parsed_arg[a]] = parsed_arg[a + 1]
-    success, rsp = sitems.xadd(sid, item)
+        items.append((parsed_arg[a], parsed_arg[a + 1]))
+    success, rsp = sitems.xadd(sid, items)
     if success:
         in_memory_store[key] = sitems
         return RESP_Encoder.bulk_string(rsp)
     else:
         return RESP_Encoder.error_string(rsp)
 
+def stream_xrange_command(key, parsed_arg):
+    sitems: StreamItems = in_memory_store.get(key)
+    start_id = parsed_arg[2]
+    end_id = parsed_arg[3]
+    resp = sitems.xrange(start_id=start_id, end_id=end_id)
+    return RESP_Encoder.array_string(resp)
 
 class CommandHandler:
     @staticmethod
@@ -155,6 +160,9 @@ class CommandHandler:
             writer.write(response)
         elif command == "XADD":
             response = stream_xadd_command(key, parsed_arg)
+            writer.write(response)
+        elif command == "XRANGE":
+            response = stream_xrange_command(key, parsed_arg)
             writer.write(response)
         else:
             writer.write("$-1\r\n".encode())

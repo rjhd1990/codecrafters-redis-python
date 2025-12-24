@@ -1,4 +1,5 @@
 import time
+import itertools
 
 
 class StreamItems:
@@ -23,7 +24,7 @@ class StreamItems:
                     seq = last_seq + 1
         return ms_time, seq
 
-    def xadd(self, sid: str, item: dict = {}):
+    def xadd(self, sid: str, items: list = []):
         if sid == "0-0":
             return False, "ERR The ID specified in XADD must be greater than 0-0"
         ms_time, seq = self._parse_id(sid)
@@ -34,10 +35,29 @@ class StreamItems:
                 False,
                 "ERR The ID specified in XADD is equal or smaller than the target stream top item",
             )
-        item["id"] = sid
-        self.value_items.append(item)
+        sid = f"{ms_time}-{seq}"
+        self.value_items.append({"id": sid, "items": items })
         self.last_id = [int(ms_time), int(seq)]
-        return True, f"{ms_time}-{seq}"
+        return True, sid
 
     def view_item(self):
         return self.value_items
+    
+    def _seralize_id(self, sid):
+        ms_time, seq = sid.split("-")
+        if seq == "*":
+            seq = 0
+        return f"{ms_time}-{seq}"
+        
+    def xrange(self, start_id: str, end_id: str):
+        result = []
+        start_id =  self._seralize_id(start_id)
+        end_id =  self._seralize_id(end_id)
+        for item in self.value_items:
+            sid = item["id"]
+            if start_id == sid or len(result):
+                flattern_items = list(itertools.chain.from_iterable(item["items"]))
+                result.append([sid, flattern_items])
+            if sid == end_id:
+                break
+        return result
