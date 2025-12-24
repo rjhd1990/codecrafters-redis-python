@@ -69,7 +69,12 @@ class StreamHandler:
 
     def xrange(self, start_id: str, end_id: str):
         result = []
-        start_id = self._seralize_id(start_id)
+        if len(self.value_items) == 0:
+            return []
+        if start_id == "-":
+            start_id = self.value_items[0]["id"]
+        else:
+            start_id = self._seralize_id(start_id)
         end_id = self._seralize_id(end_id)
 
         for rec in self.value_items:
