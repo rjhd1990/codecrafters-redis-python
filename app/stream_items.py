@@ -75,7 +75,10 @@ class StreamHandler:
             start_id = self.value_items[0]["id"]
         else:
             start_id = self._seralize_id(start_id)
-        end_id = self._seralize_id(end_id)
+        if end_id == "+":
+            end_id = None
+        else:
+            end_id = self._seralize_id(end_id)
         for rec in self.value_items:
             sid = rec["id"]
             if start_id == sid or len(result):

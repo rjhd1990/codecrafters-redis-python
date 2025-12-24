@@ -25,8 +25,6 @@ async def handle_connection(reader, writer):
             if not parsed:
                 continue
             await CommandHandler.run_command(parsed, writer)
-            # send the data immediately
-            await writer.drain()
     except asyncio.TimeoutError:
         logging.error(f"🕰️ Connection with {client_addr} timed out.")
     except ConnectionResetError:

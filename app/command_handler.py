@@ -166,6 +166,9 @@ class CommandHandler:
             writer.write(response)
         elif command == "XRANGE":
             response = stream_xrange_command(key, parsed_arg)
+            logging.info(response)
             writer.write(response)
         else:
             writer.write("$-1\r\n".encode())
+        # send the data immediately
+        await writer.drain()

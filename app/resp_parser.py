@@ -24,14 +24,14 @@ class RESP_Encoder:
         return f"-{message}\r\n".encode()
 
     def array_string(array):
+        ret =""
         def _array_converter(items):
-            ret = f"*{len(array)}\r\n"
+            ret = f"*{len(items)}\r\n"
             for item in items:
                 if isinstance(item, list):
                     ret += _array_converter(item)
                 else:
                     ret += f"${len(item)}\r\n{item}\r\n"
             return ret
-
         ret = _array_converter(array)
         return ret.encode()
