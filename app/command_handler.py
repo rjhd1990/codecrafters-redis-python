@@ -94,6 +94,7 @@ def type_command(key):
     elif isinstance(value, StreamData):
         return RESP_Encoder.simple_string("stream")
 
+
 def stream_xadd_command(key, parsed_arg):
     sid = parsed_arg[2]
     sdata = in_memory_store.get(key)

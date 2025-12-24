@@ -9,19 +9,19 @@ class StreamItem:
     id: str
     items: List
 
+
 @dataclass
 class StreamData:
     value_items: List[StreamItem] | None = None
-    last_id: tuple[int, int] =  (0, -1)  # [Timestamp, sequence]
+    last_id: tuple[int, int] = (0, -1)  # [Timestamp, sequence]
 
-    
 
 class StreamHandler:
-    def __init__(self, stream_data: StreamData| None = None):
-        self.stream_data:StreamData = stream_data if stream_data else StreamData()
+    def __init__(self, stream_data: StreamData | None = None):
+        self.stream_data: StreamData = stream_data if stream_data else StreamData()
         self.value_items: List[StreamItem] = self.stream_data.value_items or []
-        self.last_id: tuple[int, int] = self.stream_data.last_id 
-        
+        self.last_id: tuple[int, int] = self.stream_data.last_id
+
     def _parse_id(self, sid: str):
         if sid == "*":
             ms_time = int(round(time.time() * 1000))
@@ -56,7 +56,9 @@ class StreamHandler:
         return True, sid
 
     def seralized_data(self):
-        self.stream_data = StreamData(value_items=self.value_items, last_id=self.last_id)
+        self.stream_data = StreamData(
+            value_items=self.value_items, last_id=self.last_id
+        )
         return self.stream_data
 
     def _seralize_id(self, sid):
@@ -69,7 +71,7 @@ class StreamHandler:
         result = []
         start_id = self._seralize_id(start_id)
         end_id = self._seralize_id(end_id)
-        
+
         for rec in self.value_items:
             sid = rec["id"]
             if start_id == sid or len(result):
