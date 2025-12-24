@@ -22,7 +22,7 @@ class RESP_Encoder:
 
     def error_string(message):
         return f"-{message}\r\n".encode()
-    
+
     def array_string(array):
         def _array_converter(items):
             ret = f"*{len(array)}\r\n"
@@ -32,5 +32,6 @@ class RESP_Encoder:
                 else:
                     ret += f"${len(item)}\r\n{item}\r\n"
             return ret
-        ret = _array_converter(array) 
+
+        ret = _array_converter(array)
         return ret.encode()

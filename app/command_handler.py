@@ -7,6 +7,7 @@ from .stream_items import StreamItems
 
 in_memory_store = {}
 
+
 def get_values(parsed_arg):
     key = parsed_arg[1]
     values = in_memory_store.get(key, [])
@@ -109,12 +110,14 @@ def stream_xadd_command(key, parsed_arg):
     else:
         return RESP_Encoder.error_string(rsp)
 
+
 def stream_xrange_command(key, parsed_arg):
     sitems: StreamItems = in_memory_store.get(key)
     start_id = parsed_arg[2]
     end_id = parsed_arg[3]
     resp = sitems.xrange(start_id=start_id, end_id=end_id)
     return RESP_Encoder.array_string(resp)
+
 
 class CommandHandler:
     @staticmethod

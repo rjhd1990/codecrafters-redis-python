@@ -36,23 +36,23 @@ class StreamItems:
                 "ERR The ID specified in XADD is equal or smaller than the target stream top item",
             )
         sid = f"{ms_time}-{seq}"
-        self.value_items.append({"id": sid, "items": items })
+        self.value_items.append({"id": sid, "items": items})
         self.last_id = [int(ms_time), int(seq)]
         return True, sid
 
     def view_item(self):
         return self.value_items
-    
+
     def _seralize_id(self, sid):
         ms_time, seq = sid.split("-")
         if seq == "*":
             seq = 0
         return f"{ms_time}-{seq}"
-        
+
     def xrange(self, start_id: str, end_id: str):
         result = []
-        start_id =  self._seralize_id(start_id)
-        end_id =  self._seralize_id(end_id)
+        start_id = self._seralize_id(start_id)
+        end_id = self._seralize_id(end_id)
         for item in self.value_items:
             sid = item["id"]
             if start_id == sid or len(result):
