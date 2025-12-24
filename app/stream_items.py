@@ -1,5 +1,6 @@
 import time
 
+
 class StreamItems:
     def __init__(self, value_items: list = []):
         self.value_items = value_items
@@ -7,14 +8,14 @@ class StreamItems:
 
     def _parse_id(self, sid: str):
         if sid == "*":
-            ms_time = int(round(time.time()*1000))
+            ms_time = int(round(time.time() * 1000))
             seq = "*"
         else:
             ms_time, seq = sid.split("-")
         last_time, last_seq = self.last_id
         if seq == "*":
             if int(ms_time) == 0 and last_seq <= 0:
-                seq = 1 # Special case: ms_time 0 starts at 1
+                seq = 1  # Special case: ms_time 0 starts at 1
             else:
                 if last_time != int(ms_time):
                     seq = 0
