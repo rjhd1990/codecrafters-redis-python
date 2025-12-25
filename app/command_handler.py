@@ -118,19 +118,20 @@ def stream_xrange_command(key, parsed_arg):
     resp = sObj.search(start_id, end_id)
     return RESP_Encoder.array_string(resp)
 
+
 def stream_xread_command(parsed_arg):
     key = parsed_arg[2]
     result = []
-    counter = (len(parsed_arg)-3)//2
-    keys = parsed_arg[2:counter+3]
-    sids = parsed_arg[counter+3: len(parsed_arg)]
+    counter = (len(parsed_arg) - 3) // 2
+    keys = parsed_arg[2 : counter + 3]
+    sids = parsed_arg[counter + 3 : len(parsed_arg)]
     for key, sid in zip(keys, sids):
         sdata = in_memory_store.get(key)
         sObj = StreamHandler(sdata)
         resp = sObj.search(sid, "+")
         result.append([key, resp])
     return RESP_Encoder.array_string(result)
-    
+
 
 class CommandHandler:
     @staticmethod

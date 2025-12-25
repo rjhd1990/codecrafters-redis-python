@@ -65,7 +65,7 @@ class StreamHandler:
         ms_time, seq = sid.split("-")
         if seq == "*":
             seq = 0
-        return f"{ms_time}-{seq}" 
+        return f"{ms_time}-{seq}"
 
     def search(self, start: str, end: str):
         if len(self.value_items) == 0:
@@ -73,13 +73,13 @@ class StreamHandler:
         if start == "-":
             start = "0-0"
         if end == "+":
-            end = f"{time.time()*1000}-{2**64 -1 }"
-        
-        if not "-" in start:
+            end = f"{time.time() * 1000}-{2**64 - 1}"
+
+        if "-" not in start:
             start += "-0"
-        if not "-" in end:
-            end += f"-{2**64-1}"
-            
+        if "-" not in end:
+            end += f"-{2**64 - 1}"
+
         result = []
         for rec in self.value_items:
             rid = rec["id"]
@@ -87,7 +87,5 @@ class StreamHandler:
                 flattern_items = list(itertools.chain.from_iterable(rec["items"]))
                 result.append([rid, flattern_items])
             if rid >= end:
-                break 
-        print(result)
+                break
         return result
-            

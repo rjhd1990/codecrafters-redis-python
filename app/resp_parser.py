@@ -24,7 +24,8 @@ class RESP_Encoder:
         return f"-{message}\r\n".encode()
 
     def array_string(array):
-        ret =""
+        ret = ""
+
         def _array_converter(items):
             ret = f"*{len(items)}\r\n"
             for item in items:
@@ -33,5 +34,6 @@ class RESP_Encoder:
                 else:
                     ret += f"${len(item)}\r\n{item}\r\n"
             return ret
+
         ret = _array_converter(array)
         return ret.encode()
