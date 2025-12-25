@@ -120,7 +120,6 @@ def stream_xrange_command(key, parsed_arg):
 
 
 def stream_xread_command(parsed_arg):
-    key = parsed_arg[2]
     result = []
     counter = (len(parsed_arg) - 3) // 2
     keys = parsed_arg[2 : counter + 3]
