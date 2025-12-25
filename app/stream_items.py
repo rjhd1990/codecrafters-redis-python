@@ -65,10 +65,9 @@ class StreamHandler:
         ms_time, seq = sid.split("-")
         if seq == "*":
             seq = 0
-        return f"{ms_time}-{seq}"
+        return f"{ms_time}-{seq}" 
 
     def search(self, start: str, end: str):
-        print(start, end, self.value_items)
         if len(self.value_items) == 0:
             return []
         if start == "-":
@@ -77,7 +76,7 @@ class StreamHandler:
             end = f"{time.time()*1000}-{2**64 -1 }"
         
         if not "-" in start:
-            start += -"0"
+            start += "-0"
         if not "-" in end:
             end += f"-{2**64-1}"
             
