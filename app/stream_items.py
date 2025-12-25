@@ -67,23 +67,28 @@ class StreamHandler:
             seq = 0
         return f"{ms_time}-{seq}"
 
-    def xrange(self, start_id: str, end_id: str):
-        result = []
+    def search(self, start: str, end: str):
+        print(start, end, self.value_items)
         if len(self.value_items) == 0:
             return []
-        if start_id == "-":
-            start_id = self.value_items[0]["id"]
-        else:
-            start_id = self._seralize_id(start_id)
-        if end_id == "+":
-            end_id = None
-        else:
-            end_id = self._seralize_id(end_id)
+        if start == "-":
+            start = "0-0"
+        if end == "+":
+            end = f"{time.time()*1000}-{2**64 -1 }"
+        
+        if not "-" in start:
+            start += -"0"
+        if not "-" in end:
+            end += f"-{2**64-1}"
+            
+        result = []
         for rec in self.value_items:
-            sid = rec["id"]
-            if start_id == sid or len(result):
+            rid = rec["id"]
+            if start <= rid <= end:
                 flattern_items = list(itertools.chain.from_iterable(rec["items"]))
-                result.append([sid, flattern_items])
-            if sid == end_id:
-                break
+                result.append([rid, flattern_items])
+            if rid >= end:
+                break 
+        print(result)
         return result
+            

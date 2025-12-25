@@ -77,7 +77,7 @@ def set_command(parsed_arg):
     in_memory_store[parsed_arg[1]] = parsed_arg[2]
     if len(parsed_arg) >= 4 and parsed_arg[3].lower() in ["px"]:
         ttl = int(parsed_arg[4])
-        logging.info("ttl", ttl)
+        logging.info(f"ttl: {ttl}")
         threading.Timer(ttl / 1000, in_memory_store.pop, args=[parsed_arg[1]]).start()
 
 
@@ -115,9 +115,17 @@ def stream_xrange_command(key, parsed_arg):
     sObj = StreamHandler(sdata)
     start_id = parsed_arg[2]
     end_id = parsed_arg[3]
-    resp = sObj.xrange(start_id=start_id, end_id=end_id)
+    resp = sObj.search(start_id, end_id)
     return RESP_Encoder.array_string(resp)
 
+def stream_xread_command(parsed_arg):
+    key = parsed_arg[2]
+    sid = parsed_arg[3]
+    sdata = in_memory_store.get(key)
+    sObj = StreamHandler(sdata)
+    resp = sObj.search(sid, "+")
+    return RESP_Encoder.array_string([[ key, resp]])
+    
 
 class CommandHandler:
     @staticmethod
@@ -166,7 +174,9 @@ class CommandHandler:
             writer.write(response)
         elif command == "XRANGE":
             response = stream_xrange_command(key, parsed_arg)
-            logging.info(response)
+            writer.write(response)
+        elif command == "XREAD":
+            response = stream_xread_command(parsed_arg)
             writer.write(response)
         else:
             writer.write("$-1\r\n".encode())
